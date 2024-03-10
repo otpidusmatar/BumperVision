@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO("model/testingbumpermodel.pt")
+model = YOLO("main/model/testingbumpermodel.pt")
 
-results = model.track(source="testvideos/robottrimvid.mp4", show=True)
+results = model.track(source="main/testvideos/robottrimvid.mp4", show=True)
 
