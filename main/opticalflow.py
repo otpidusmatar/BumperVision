@@ -51,6 +51,7 @@ while(cap.isOpened()):
     prev = good_new.reshape(-1, 1, 2)
     # Opens a new window and displays the output frame
     cv.imshow("sparse optical flow", output)
+    # Removes previous markings on frame for every 2 frames analyzed
     if i % 2 == 0:
         mask = np.zeros_like(first_frame)
     i += 1

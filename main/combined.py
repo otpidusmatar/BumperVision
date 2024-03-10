@@ -21,6 +21,7 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
+i = 1
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -50,12 +51,12 @@ while(cap.isOpened()):
     prev_gray = gray.copy()
     # Updates previous good feature points
     prev = good_new.reshape(-1, 1, 2)
+    # Combines optical flow and bumper detection model and outputs display
     result = model.track(source=output, show=True)
-    # Opens a new window and displays the output frame
-    # cv.imshow("sparse optical flow", output)
-    # # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
-    # if cv.waitKey(10) & 0xFF == ord('q'):
-    #     break
+    # Removes optical flow markings every 2 frames
+    if i % 2 == 0:
+        mask = np.zeros_like(first_frame)
+    i += 1
 # The following frees up resources and closes all windows
 cap.release()
 cv.destroyAllWindows()
