@@ -2,13 +2,15 @@ import cv2 as cv
 import numpy as np
 from ultralytics import YOLO
 
+# Note: change the maxCorners value (line 9) and k delay value (line 59) as necessary by unique footage scale of view
+
 model = YOLO("main/model/testingbumpermodel.pt")
 # Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
+feature_params = dict(maxCorners = 600, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/robottrimvid.mp4")
+cap = cv.VideoCapture("main/testvideos/2022compvid.mp4")
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
@@ -21,7 +23,7 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
-i = 1
+k = 1
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -54,9 +56,9 @@ while(cap.isOpened()):
     # Combines optical flow and bumper detection model and outputs display
     result = model.track(source=output, show=True)
     # Removes optical flow markings every 2 frames
-    if i % 2 == 0:
+    if k % 15 == 0:
         mask = np.zeros_like(first_frame)
-    i += 1
+    k += 1
 # The following frees up resources and closes all windows
 cap.release()
 cv.destroyAllWindows()
