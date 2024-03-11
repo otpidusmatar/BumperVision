@@ -19,7 +19,22 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
-i = 1
+iteration = 1  # The nth run of the while loop
+frame_retention = 2  # Used to track the number of annotations showed (higher number means longer duration of motions shown on screen before clearing)
+
+frame_memory = [mask]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
+# Initialize blank frames in frame memory
+for i in range(0, frame_retention-1):
+    i = np.zeros_like(first_frame)
+    frame_memory.append(i)
+
+def create_output_mask(masklist):
+    product = masklist[0]
+    for i in range(0, len(masklist)-1):
+        product = cv.add(product, masklist[i+1])
+    masklist = masklist.pop(1)
+    return product
+
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -43,8 +58,10 @@ while(cap.isOpened()):
         mask = cv.line(mask, (a, b), (c, d), color, 2)
         # Draws filled circle (thickness of -1) at new position with green color and radius of 3
         frame = cv.circle(frame, (a, b), 3, color, -1)
+    frame_memory.append(mask)
+    overlay_mask = create_output_mask(frame_memory)
     # Overlays the optical flow tracks on the original frame
-    output = cv.add(frame, mask)
+    output = cv.add(frame, overlay_mask)
     # Updates previous frame
     prev_gray = gray.copy()
     # Updates previous good feature points
@@ -52,9 +69,9 @@ while(cap.isOpened()):
     # Opens a new window and displays the output frame
     cv.imshow("sparse optical flow", output)
     # Removes previous markings on frame for every 2 frames analyzed
-    if i % 2 == 0:
+    if iteration % frame_retention == 0:
         mask = np.zeros_like(first_frame)
-    i += 1
+    iteration += 1
     # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
     if cv.waitKey(10) & 0xFF == ord('q'):
         break
