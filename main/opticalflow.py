@@ -20,7 +20,7 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 mask = np.zeros_like(first_frame)
 
 iteration = 1  # The nth run of the while loop
-frame_retention = 2  # Used to track the number of annotations showed (higher number means longer duration of motions shown on screen before clearing)
+frame_retention = 5  # Used to track the number of annotations showed (higher number means longer duration of motions shown on screen before clearing)
 
 frame_memory = [mask]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
@@ -68,10 +68,8 @@ while(cap.isOpened()):
     prev = good_new.reshape(-1, 1, 2)
     # Opens a new window and displays the output frame
     cv.imshow("sparse optical flow", output)
-    # Removes previous markings on frame for every 2 frames analyzed
-    if iteration % frame_retention == 0:
-        mask = np.zeros_like(first_frame)
-    iteration += 1
+    # Resets mask to prevent carry-over from outside of what is stored in frame_memory
+    mask = np.zeros_like(first_frame)
     # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
     if cv.waitKey(10) & 0xFF == ord('q'):
         break
