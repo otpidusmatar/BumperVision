@@ -23,7 +23,8 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
-k = 1
+iteration = 1
+frame_retention = 15
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -56,9 +57,9 @@ while(cap.isOpened()):
     # Combines optical flow and bumper detection model and outputs display
     result = model.track(source=output, show=True)
     # Removes optical flow markings every 2 frames
-    if k % 15 == 0:
+    if iteration % frame_retention == 0:
         mask = np.zeros_like(first_frame)
-    k += 1
+    iteration += 1
 # The following frees up resources and closes all windows
 cap.release()
 cv.destroyAllWindows()
