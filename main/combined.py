@@ -25,7 +25,7 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 mask = np.zeros_like(first_frame)
 
 iteration = 1
-frame_retention = 7
+frame_retention = 4
 
 frame_memory = [mask]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
@@ -44,7 +44,10 @@ while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
     # Converts each frame to grayscale - we previously only converted the first frame to grayscale
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    try:
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    except cv.error:
+        break
     # Calculates sparse optical flow by Lucas-Kanade method
     # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
     prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
@@ -99,3 +102,4 @@ while(cap.isOpened()):
 # The following frees up resources and closes all windows
 cap.release()
 cv.destroyAllWindows()
+print("All done!")
