@@ -1,12 +1,13 @@
 import cv2 as cv
 import numpy as np
 from ultralytics import YOLO
+import supervision as sv
 
 # Note: change the maxCorners value (line 9) and k delay value (line 59) as necessary by unique footage scale of view
 
 model = YOLO("main/model/noteandbumpermodel.pt")
 # Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 600, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
+feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
@@ -70,8 +71,26 @@ while(cap.isOpened()):
     prev_gray = gray.copy()
     # Updates previous good feature points
     prev = good_new.reshape(-1, 1, 2)
-    # Combines optical flow and bumper detection model and outputs display
-    result = model.track(source=output, show=True)
+    # Gets model prediction on image
+    result = model(frame, agnostic_nms=True)[0]
+    # Feeds results to supervision for frame annotation (supervision is used for annotating separately from optical flow to avoid interference)
+    detections = sv.Detections.from_ultralytics(result)
+    # Sets up bounding box and label format
+    bounding_box_annotator = sv.BoundingBoxAnnotator(thickness=10)
+    label_annotator = sv.LabelAnnotator(text_scale=1, text_thickness=4)
+    # Collects detection labels
+    labels = [
+        model.model.names[class_id]
+        for class_id
+        in detections.class_id
+    ]
+    # Adds model detections to image with optical flow
+    annotated_image = bounding_box_annotator.annotate(
+        scene=output, detections=detections)
+    annotated_image = label_annotator.annotate(
+        scene=annotated_image, detections=detections, labels=labels)
+    # Shows final output with optical flow and model detections
+    cv.imshow("test", output)
     # Resets mask to prevent carry-over from outside of what is stored in frame_memory
     mask = np.zeros_like(first_frame)
     # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
