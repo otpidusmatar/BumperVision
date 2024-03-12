@@ -10,7 +10,7 @@ feature_params = dict(maxCorners = 600, qualityLevel = 0.2, minDistance = 2, blo
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/trimmed2022compvid.mp4")
+cap = cv.VideoCapture("main/testvideos/trimmed2024robotrevealvid.mp4")
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
@@ -24,7 +24,7 @@ prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
 mask = np.zeros_like(first_frame)
 
 iteration = 1
-frame_retention = 15
+frame_retention = 7
 
 frame_memory = [mask]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
