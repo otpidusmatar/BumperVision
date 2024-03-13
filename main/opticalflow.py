@@ -22,7 +22,7 @@ mask = np.zeros_like(first_frame)
 iteration = 1  # The nth run of the while loop
 frame_retention = 5  # Used to track the number of annotations showed (higher number means longer duration of motions shown on screen before clearing)
 
-frame_memory = [mask]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
+frame_memory = [mask.copy()]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
 for i in range(0, frame_retention-1):
     i = np.zeros_like(first_frame)
