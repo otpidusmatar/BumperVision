@@ -3,15 +3,13 @@ import numpy as np
 from ultralytics import YOLO
 import supervision as sv
 
-# Note: change the maxCorners value (line 9) and k delay value (line 59) as necessary by unique footage scale of view
-
 model = YOLO("main/model/torquemodel.pt")
 # Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
+feature_params = dict(maxCorners = 300, qualityLevel = 0.4, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/trimmed2024robotrevealvid.mp4")
+cap = cv.VideoCapture(1)
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
