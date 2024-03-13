@@ -5,7 +5,7 @@ import supervision as sv
 
 model = YOLO("main/model/torquemodel.pt")
 # Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 300, qualityLevel = 0.4, minDistance = 2, blockSize = 7)
+feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
