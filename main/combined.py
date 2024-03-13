@@ -5,7 +5,7 @@ import supervision as sv
 
 # Note: change the maxCorners value (line 9) and k delay value (line 59) as necessary by unique footage scale of view
 
-model = YOLO("main/model/noteandbumpermodel.pt")
+model = YOLO("main/model/torquemodel.pt")
 # Parameters for Shi-Tomasi corner detection
 feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
