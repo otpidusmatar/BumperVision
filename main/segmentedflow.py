@@ -7,7 +7,7 @@ feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blo
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/robottrimvid.mp4")
+cap = cv.VideoCapture("main/testvideos/trimmed2024robotrevealvid.mp4")
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
@@ -36,6 +36,7 @@ def create_output_mask(masklist):
     masklist = masklist.pop(1)
     return product
 
+prev_corners_is_empty = False
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -45,12 +46,17 @@ while(cap.isOpened()):
     # Calculates sparse optical flow by Lucas-Kanade method
     # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
     prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
-    next, status, error = cv.calcOpticalFlowPyrLK(prev_gray, gray, prev, None, **lk_params)
-    # Selects good feature points for previous position
-    good_old = prev[status == 1].astype(int)
-    # Selects good feature points for next position
-    good_new = next[status == 1].astype(int)
-    # Draws the optical flow tracks
+    try:
+        prev.all()
+    except AttributeError:
+        prev_corners_is_empty = True
+    if not prev_corners_is_empty: 
+        next, status, error = cv.calcOpticalFlowPyrLK(prev_gray, gray, prev, None, **lk_params)
+        # Selects good feature points for previous position
+        good_old = prev[status == 1].astype(int)
+        # Selects good feature points for next position
+        good_new = next[status == 1].astype(int)
+        # Draws the optical flow tracks
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         # Returns a contiguous flattened array as (x, y) coordinates for new point
         a, b = new.ravel()
@@ -72,6 +78,7 @@ while(cap.isOpened()):
     cv.imshow("sparse optical flow", output)
     # Resets mask to prevent carry-over from outside of what is stored in frame_memory
     mask = np.zeros_like(first_frame)
+    prev_corners_is_empty = False
     # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
     if cv.waitKey(10) & 0xFF == ord('q'):
         break
