@@ -34,7 +34,8 @@ def bumpersegment_preprocess(frame):
 
     # Combine segmented frames together for output
     output = cv2.add(bluesegmented, redsegmented)
-
+    output[bluemask>0]=(220,240,177)
+    output[redmask>0]=(220,240,177)
     # Convert output back to RGB
     output = cv2.cvtColor(output, cv2.COLOR_HSV2BGR)
 
