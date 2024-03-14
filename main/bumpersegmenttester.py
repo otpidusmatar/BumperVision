@@ -39,6 +39,9 @@ while(cap.isOpened()):
 
     # Combine segmented frames together for output
     output = cv2.add(bluesegmented, redsegmented)
+    output[bluemask>0]=(220,240,177)
+    output[redmask>0]=(220,240,177)
+    cv2.imshow("o", output)
     output = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
 
     # Show the original and segmented images
