@@ -3,11 +3,11 @@ import numpy as np
 from bumpersegment import bumpersegment_preprocess
 
 # Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 900, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
+feature_params = dict(maxCorners = 2000, qualityLevel = 0.2, minDistance = 5, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/testvid.mp4")
+cap = cv.VideoCapture("main/testvideos/redvblue1vid.mp4")
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
@@ -41,6 +41,7 @@ while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
     segmented_frame = bumpersegment_preprocess(frame)
+    cv.imshow("hi", segmented_frame)
     # Converts each frame to grayscale - we previously only converted the first frame to grayscale
     gray = cv.cvtColor(segmented_frame, cv.COLOR_BGR2GRAY)
     # Calculates sparse optical flow by Lucas-Kanade method

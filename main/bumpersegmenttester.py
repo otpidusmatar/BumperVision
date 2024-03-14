@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Read the video
-cap = cv2.VideoCapture("/Users/otpidusmatar/Documents/GitHub/BumperVision/main/testvideos/testvid.mp4")
+cap = cv2.VideoCapture("/Users/otpidusmatar/Documents/GitHub/BumperVision/main/testvideos/redvblue1vid.mp4")
 
 # Define blue bumper range
 lower_bound_blue = np.array([0, 0, 0], dtype=np.uint8)
@@ -39,6 +39,7 @@ while(cap.isOpened()):
 
     # Combine segmented frames together for output
     output = cv2.add(bluesegmented, redsegmented)
+    output = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
 
     # Show the original and segmented images
     cv2.imshow("Original", frame)
