@@ -114,7 +114,7 @@ while(cap.isOpened()):
     # Resets mask to prevent carry-over from outside of what is stored in frame_memory
     mask = np.zeros_like(first_frame)
     time_lost = sum(result.speed.values())+time.time()-loop_start
-    print("Time loss: %s" % time_lost)
+    print("Time loss (milliseconds): %s" % time_lost)
     frames_lost = int(round(time_lost * fpms, 0))
     print("Frame loss: %s" % frames_lost)
     # Frames are read by intervals of 10 milliseconds. The programs breaks out of the while loop when the user presses the 'q' key
