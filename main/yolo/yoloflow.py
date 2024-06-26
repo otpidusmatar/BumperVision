@@ -3,13 +3,13 @@ import numpy as np
 from ultralytics import YOLO
 import supervision as sv
 
-model = YOLO("main/model/noteandbumpermodel.pt")
+model = YOLO("main/yolo/model/noteandbumpermodel.pt")
 # Parameters for Shi-Tomasi corner detection
 feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/testvideos/testvid.mp4")
+cap = cv.VideoCapture("main/tests/testvideos/testvid.mp4")
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
