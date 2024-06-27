@@ -6,8 +6,8 @@ import torch
 import time
 
 model = YOLO("main/yolo/model/noteandbumpermodel.pt")
-# Parameters for Lucas-Kanade optical flow
-lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+# Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
+lk_params = dict(winSize = (21,21), maxLevel = 15, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
 cap = cv.VideoCapture("main/tests/largevids/FRC Team 7157 Robot POV - AVR 2023 Finals 2.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
@@ -31,7 +31,7 @@ mask = np.zeros_like(first_frame)
 
 # Frame memory params
 iteration = 1
-frame_retention = 4
+frame_retention = 10
 
 frame_memory = [mask.copy()]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
@@ -49,13 +49,15 @@ def create_output_mask(masklist):
 # Frame loss params
 time_lost = 0
 frames_lost = 0
+# Increase this value if FPS post-adjustment is still slower than real-time (int only)
+frame_loss_increment = 3 
 # Error-trapping status param
 prev_edges_blank = False
 
 while(cap.isOpened()):
     loop_start = time.time()
     # Account for lost frames like so
-    for lost_frame in range(0, frames_lost+2):
+    for lost_frame in range(0, frames_lost+frame_loss_increment):
         ret, frame = cap.read()
     frames_lost = 0
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
@@ -101,17 +103,25 @@ while(cap.isOpened()):
     # prev = good_new.reshape(-1, 1, 2)
     # Gets model prediction on image
     results = model(frame, agnostic_nms=True)[0]
-    prev = np.empty((len(results)*2, 1, 2), dtype=np.float32)
-    # The following for loop for retrieving bounding box coords may have some room for optimization
-    i = 0
-    for result in results:
-        corner_tensor = result.boxes.xyxy[0]
-        corner1 = [corner_tensor[0].item(), corner_tensor[1].item()]
-        corner2 = [corner_tensor[2].item(), corner_tensor[3].item()]
-        prev[i, 0, :] = corner1
-        i+=1
-        prev[i, 0, :] = corner2
-        i+=1
+    # Small usage of memory in hopes of minimal speed gains :)
+    num_of_results = len(results)
+    prev = np.empty((num_of_results*4, 1, 2), dtype=np.float32)
+    # Retrive coordinates to track from bouding boxes
+    for i in range(0, num_of_results):
+        corner_tensor = results[i].boxes.xyxy[0]
+        x1 = corner_tensor[0].item()
+        y1 = corner_tensor[1].item()
+        x2 = corner_tensor[2].item()
+        y2 = corner_tensor[3].item()
+        corner1 = [x1, y1]
+        corner2 = [x2, y2]
+        corner3 = [x1, y2]
+        corner4 = [x2, y1]
+        adjusted_i = i*4
+        prev[adjusted_i, 0, :] = corner1
+        prev[adjusted_i+1, 0, :] = corner2
+        prev[adjusted_i+2, 0, :] = corner3
+        prev[adjusted_i+3, 0, :] = corner4
     # Feeds results to supervision for frame annotation (supervision is used for annotating separately from optical flow to avoid interference)
     detections = sv.Detections.from_ultralytics(results)
     # Sets up bounding box and label format
