@@ -2,7 +2,7 @@
 ***Experiments with FRC Robot Bumper Detection and Tracking on Field***
 
 **Current Progress:**
-- Developed accurate YOLOv8 robot and note detection model
+- Trained accurate YOLOv8 robot and note detection model
 - Implemented optical flow algorithm to track detected robot bounding boxes
 - Created script to adjust FPS for testing latency effects with video samples
 
@@ -13,4 +13,4 @@
 
 Started March 9th, 2024  
 By Aniket Chakraborty  
-Texas Torque (1477) Rookie Programmer
+Texas Torque (1477) Programmer
