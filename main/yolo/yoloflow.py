@@ -4,26 +4,25 @@ from ultralytics import YOLO
 import supervision as sv
 
 model = YOLO("main/yolo/model/noteandbumpermodel.pt")
-# Parameters for Shi-Tomasi corner detection
-feature_params = dict(maxCorners = 300, qualityLevel = 0.2, minDistance = 2, blockSize = 7)
 # Parameters for Lucas-Kanade optical flow
-lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
-# The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/testvideos/testvid.mp4")
+lk_params = dict(winSize = (21,21), maxLevel = 15, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+# The video feed is read in as a VideoCapture object 
+# If using this script, ideally you're running on an actual robot; edit camera port as necessary
+cap = cv.VideoCapture(0)
 # Variable for color to draw optical flow track
 color = (0, 255, 0)
 # ret = a boolean return value from getting the frame, first_frame = the first frame in the entire video sequence
 ret, first_frame = cap.read()
 # Converts frame to grayscale because we only need the luminance channel for detecting edges - less computationally expensive
 prev_gray = cv.cvtColor(first_frame, cv.COLOR_BGR2GRAY)
-# Finds the strongest corners in the first frame by Shi-Tomasi method - we will track the optical flow for these corners
-# https://docs.opencv.org/3.0-beta/modules/imgproc/doc/feature_detection.html#goodfeaturestotrack
-prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
+# Initialize empty list of previously detected points
+prev = []
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
+# Frame memory params
 iteration = 1
-frame_retention = 4
+frame_retention = 10
 
 frame_memory = [mask.copy()]  # This is where the previous masked frames will be stored. The first frame is blank for future use, the memory length is frame_retention + 1
 # Initialize blank frames in frame memory
@@ -38,6 +37,9 @@ def create_output_mask(masklist):
     masklist = masklist.pop(1)
     return product
 
+# Error-trapping status param
+prev_edges_blank = False
+
 while(cap.isOpened()):
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
@@ -46,14 +48,21 @@ while(cap.isOpened()):
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     except cv.error:
         break
+    if len(prev) == 0: 
+        prev = np.empty((1, 1, 2), dtype=np.float32)
     # Calculates sparse optical flow by Lucas-Kanade method
     # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowpyrlk
-    prev = cv.goodFeaturesToTrack(prev_gray, mask = None, **feature_params)
     next, status, error = cv.calcOpticalFlowPyrLK(prev_gray, gray, prev, None, **lk_params)
-    # Selects good feature points for previous position
-    good_old = prev[status == 1].astype(int)
-    # Selects good feature points for next position
-    good_new = next[status == 1].astype(int)
+    try:
+        assert type(next) == np.ndarray
+    except AssertionError:
+        prev_edges_blank = True
+    if not prev_edges_blank:
+        # Selects good feature points for previous position
+        good_old = prev[status == 1].astype(int)
+        # Selects good feature points for next position
+        good_new = next[status == 1].astype(int)
+    else: prev_edges_blank = False
     # Draws the optical flow tracks
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         # Returns a contiguous flattened array as (x, y) coordinates for new point
@@ -71,11 +80,29 @@ while(cap.isOpened()):
     # Updates previous frame
     prev_gray = gray.copy()
     # Updates previous good feature points
-    prev = good_new.reshape(-1, 1, 2)
+    # prev = good_new.reshape(-1, 1, 2)
     # Gets model prediction on image
-    result = model(frame, agnostic_nms=True)[0]
+    results = model(frame, agnostic_nms=True)[0]
+    num_of_results = len(results)
+    prev = np.empty((num_of_results*4, 1, 2), dtype=np.float32)
+    # Retrive coordinates to track from bouding boxes
+    for i in range(0, num_of_results):
+        corner_tensor = results[i].boxes.xyxy[0]
+        x1 = corner_tensor[0].item()
+        y1 = corner_tensor[1].item()
+        x2 = corner_tensor[2].item()
+        y2 = corner_tensor[3].item()
+        corner1 = [x1, y1]
+        corner2 = [x2, y2]
+        corner3 = [x1, y2]
+        corner4 = [x2, y1]
+        adjusted_i = i*4
+        prev[adjusted_i, 0, :] = corner1
+        prev[adjusted_i+1, 0, :] = corner2
+        prev[adjusted_i+2, 0, :] = corner3
+        prev[adjusted_i+3, 0, :] = corner4
     # Feeds results to supervision for frame annotation (supervision is used for annotating separately from optical flow to avoid interference)
-    detections = sv.Detections.from_ultralytics(result)
+    detections = sv.Detections.from_ultralytics(results)
     # Sets up bounding box and label format
     bounding_box_annotator = sv.BoundingBoxAnnotator(thickness=10)
     label_annotator = sv.LabelAnnotator(text_scale=1, text_thickness=4)
