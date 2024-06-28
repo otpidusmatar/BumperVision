@@ -9,7 +9,7 @@ model = YOLO("main/yolo/model/noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 15, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/largevids/FRC Team 7157 Robot POV - AVR 2023 Finals 2.mp4")
+cap = cv.VideoCapture("main/tests/testvideos/trimmed2024robotrevealvid.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
 fps = cap.get(cv.CAP_PROP_FPS)
 frame_count = cap.get(cv.CAP_PROP_FRAME_COUNT)
@@ -108,6 +108,8 @@ while(cap.isOpened()):
     prev = np.empty((num_of_results*4, 1, 2), dtype=np.float32)
     # Retrive coordinates to track from bouding boxes
     for i in range(0, num_of_results):
+        # This line makes sure only robot bounding box corners are used for optical flow (change class_id as necessary)
+        if not results[i].boxes.cls.item() == 1.: continue
         corner_tensor = results[i].boxes.xyxy[0]
         x1 = corner_tensor[0].item()
         y1 = corner_tensor[1].item()
