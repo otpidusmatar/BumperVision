@@ -5,7 +5,7 @@ import supervision as sv
 import torch
 import time
 
-model = YOLO("main/yolo/model/best.pt")
+model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 25, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
@@ -50,7 +50,7 @@ def create_output_mask(masklist):
 time_lost = 0
 frames_lost = 0
 # Increase this value if FPS post-adjustment is still slower than real-time (int only)
-frame_loss_increment = 1
+frame_loss_increment = 0
 # Error-trapping status param
 prev_edges_blank = False
 
