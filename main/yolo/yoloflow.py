@@ -3,7 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 import supervision as sv
 
-model = YOLO("main/yolo/model/noteandbumpermodel.pt")
+model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow
 lk_params = dict(winSize = (21,21), maxLevel = 15, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object 
