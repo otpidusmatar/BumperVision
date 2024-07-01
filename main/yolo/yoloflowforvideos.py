@@ -9,7 +9,7 @@ model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 25, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/robotapproachesnotes/instance1.mp4")
+cap = cv.VideoCapture("main/tests/robotapproachesnotes/instance3.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
 fps = cap.get(cv.CAP_PROP_FPS)
 frame_count = cap.get(cv.CAP_PROP_FRAME_COUNT)
