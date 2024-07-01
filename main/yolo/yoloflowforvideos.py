@@ -26,6 +26,8 @@ ret, first_frame = cap.read()
 prev_gray = cv.cvtColor(first_frame, cv.COLOR_BGR2GRAY)
 # Initialize empty list of previously detected points
 prev = []
+# Used later for separate frame to plot optical flow points
+dotframe = 0
 # Creates an image filled with zero intensities with the same dimensions as the frame - for later drawing purposes
 mask = np.zeros_like(first_frame)
 
@@ -92,11 +94,11 @@ while(cap.isOpened()):
         # Draws line between new and old position with green color and 2 thickness
         mask = cv.line(mask, (a, b), (c, d), color, 2)
         # Draws filled circle (thickness of -1) at new position with green color and radius of 3
-        frame = cv.circle(frame, (a, b), 3, color, -1)
+        dotframe = cv.circle(frame, (a, b), 3, color, -1)
     frame_memory.append(mask)
     overlay_mask = create_output_mask(frame_memory)
     # Overlays the optical flow tracks on the original frame
-    output = cv.add(frame, overlay_mask)
+    output = cv.add(dotframe, overlay_mask)
     # Updates previous frame
     prev_gray = gray.copy()
     # Updates previous good feature points (no longer used due to manual provision of points)
