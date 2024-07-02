@@ -9,7 +9,7 @@ model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 25, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/testvideos/redvblue2vid.mp4")
+cap = cv.VideoCapture("main/tests/testvideos/trimmed2024robotrevealvid.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
 fps = cap.get(cv.CAP_PROP_FPS)
 frame_count = cap.get(cv.CAP_PROP_FRAME_COUNT)
@@ -63,7 +63,7 @@ def find_expected_new_pt(distance, slope, oldx, oldy):
 def plot_avg_vectors(distance, slope, old_pts, mask, color=(0, 0, 255)):
     for point in old_pts:
         expected = find_expected_new_pt(distance, slope, point[0], point[1])
-        mask = cv.line(mask, expected, (c, d), color, 2)
+        mask = cv.line(mask, expected, (point[0], point[1]), color, 2)
     return mask
 
 # Frame loss params
