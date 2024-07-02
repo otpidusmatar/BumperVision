@@ -2,14 +2,14 @@ import cv2 as cv
 import numpy as np
 from ultralytics import YOLO
 import supervision as sv
-import torch
 import time
+from math import dist, sqrt, pow
 
 model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 25, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/robotapproachesnotes/instance3.mp4")
+cap = cv.VideoCapture("main/tests/testvideos/redvblue2vid.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
 fps = cap.get(cv.CAP_PROP_FPS)
 frame_count = cap.get(cv.CAP_PROP_FRAME_COUNT)
@@ -45,6 +45,26 @@ def create_output_mask(masklist):
         product = cv.add(product, masklist[i+1])
     masklist = masklist.pop(1)
     return product
+
+def slope(x2, y2, x1, y1):
+    return (y2-y1)/(x2-x1)
+
+def avg(values):
+    try: return sum(values)/len(values)
+    except ZeroDivisionError: return None
+
+def find_expected_new_pt(distance, slope, oldx, oldy):
+    slope_squared = pow(slope, 2)
+    y = sqrt((slope_squared*pow(distance, 2))/(slope_squared+1))+oldy
+    x = ((y-oldy)/slope)+oldx
+    try: return (int(x), int(y))
+    except ValueError: return(int(oldx), int(oldy+distance))
+
+def plot_avg_vectors(distance, slope, old_pts, mask, color=(0, 0, 255)):
+    for point in old_pts:
+        expected = find_expected_new_pt(distance, slope, point[0], point[1])
+        mask = cv.line(mask, expected, (c, d), color, 2)
+    return mask
 
 # Frame loss params
 time_lost = 0
@@ -85,6 +105,9 @@ while(cap.isOpened()):
         # Selects good feature points for next position
         good_new = next[status == 1].astype(int)
     else: prev_edges_blank = False
+    lengths = []
+    slopes = []
+    old_pts = []
     # Draws the optical flow tracks
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         # Returns a contiguous flattened array as (x, y) coordinates for new point
@@ -95,6 +118,14 @@ while(cap.isOpened()):
         mask = cv.line(mask, (a, b), (c, d), color, 2)
         # Draws filled circle (thickness of -1) at new position with green color and radius of 3
         frame = cv.circle(frame, (a, b), 3, color, -1)
+        length = dist([a, b], [c, d])
+        lengths.append(length)
+        direction = slope(a, b, c, d)
+        slopes.append(direction)
+        old_pts.append((c, d))
+    avg_dist_travelled = avg(lengths)
+    avg_direction_travelled = avg(slopes)
+    mask = plot_avg_vectors(avg_dist_travelled, avg_direction_travelled, old_pts, mask)
     frame_memory.append(mask)
     overlay_mask = create_output_mask(frame_memory)
     # Overlays the optical flow tracks on the original frame
