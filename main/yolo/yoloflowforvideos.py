@@ -9,7 +9,7 @@ model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
 lk_params = dict(winSize = (21,21), maxLevel = 25, criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 # The video feed is read in as a VideoCapture object
-cap = cv.VideoCapture("main/tests/testvideos/trimmed2024robotrevealvid.mp4")
+cap = cv.VideoCapture("main/tests/robotapproachesnotes/instance3.mp4")
 # Retrieve video properties for proper adjustment to mimic real-world latency
 fps = cap.get(cv.CAP_PROP_FPS)
 frame_count = cap.get(cv.CAP_PROP_FRAME_COUNT)
@@ -65,6 +65,9 @@ def plot_avg_vectors(distance, slope, old_pts, mask, color=(0, 0, 255)):
         expected = find_expected_new_pt(distance, slope, point[0], point[1])
         mask = cv.line(mask, expected, (point[0], point[1]), color, 2)
     return mask
+
+def find_bounding_box_size(x1, y1, x2, y2):
+    return (x2-x1)*(y2-y1)
 
 # Frame loss params
 time_lost = 0
@@ -140,21 +143,29 @@ while(cap.isOpened()):
     # Retrive coordinates to track from bouding boxes
     for i in range(0, num_of_results):
         # This line makes sure only robot bounding box corners are used for optical flow (change class_id as necessary)
-        if not results[i].boxes.cls.item() == 1.: continue
-        corner_tensor = results[i].boxes.xyxy[0]
-        x1 = corner_tensor[0].item()
-        y1 = corner_tensor[1].item()
-        x2 = corner_tensor[2].item()
-        y2 = corner_tensor[3].item()
-        corner1 = [x1, y1]
-        corner2 = [x2, y2]
-        corner3 = [x1, y2]
-        corner4 = [x2, y1]
-        adjusted_i = i*4
-        prev[adjusted_i, 0, :] = corner1
-        prev[adjusted_i+1, 0, :] = corner2
-        prev[adjusted_i+2, 0, :] = corner3
-        prev[adjusted_i+3, 0, :] = corner4
+        if results[i].boxes.cls.item() == 0.:
+            corner_tensor = results[i].boxes.xyxy[0]
+            x1 = corner_tensor[0].item()
+            y1 = corner_tensor[1].item()
+            x2 = corner_tensor[2].item()
+            y2 = corner_tensor[3].item()
+            print("Found note bounding box of size " + str(find_bounding_box_size(x1, y1, x2, y2)))
+        else:
+            corner_tensor = results[i].boxes.xyxy[0]
+            x1 = corner_tensor[0].item()
+            y1 = corner_tensor[1].item()
+            x2 = corner_tensor[2].item()
+            y2 = corner_tensor[3].item()
+            corner1 = [x1, y1]
+            corner2 = [x2, y2]
+            corner3 = [x1, y2]
+            corner4 = [x2, y1]
+            adjusted_i = i*4
+            prev[adjusted_i, 0, :] = corner1
+            prev[adjusted_i+1, 0, :] = corner2
+            prev[adjusted_i+2, 0, :] = corner3
+            prev[adjusted_i+3, 0, :] = corner4
+            print("Found robot bounding box of size " + str(find_bounding_box_size(x1, y1, x2, y2)))
     # Feeds results to supervision for frame annotation (supervision is used for annotating separately from optical flow to avoid interference)
     detections = sv.Detections.from_ultralytics(results)
     # Sets up bounding box and label format
