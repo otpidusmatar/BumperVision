@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from math import sqrt
-import numpy as np
+from math import *
 
 class Rectangle:
     def __init__(self, canvas, x1, y1, x2, y2, width, height, outline="blue", fill="black", thickness=5):
@@ -36,10 +35,10 @@ class Rectangle:
         self.canvas.itemconfig(self.rect, width=thickness)
 
 class VectorLines:
-    def __init__(self, canvas, x1, y1, x2, y2, slope, distance, width, height):
+    def __init__(self, canvas, x1, y1, x2, y2, angle, distance, width, height):
         self.canvas = canvas
         self.x1, self.y1 = x1, y1
-        self.slope = slope
+        self.angle = angle
         self.distance = distance
         self.width = width
         self.height = height
@@ -49,36 +48,43 @@ class VectorLines:
         self.pt3a = (x1, y2)
         self.pt4a = (x2, y2)
 
-        self.pt1b = self.find_expected_new_pt(distance, slope, self.pt1a[0], self.pt1a[1])
-        self.pt2b = self.find_expected_new_pt(distance, slope, self.pt2a[0], self.pt2a[1])
-        self.pt3b = self.find_expected_new_pt(distance, slope, self.pt3a[0], self.pt3a[1])
-        self.pt4b = self.find_expected_new_pt(distance, slope, self.pt4a[0], self.pt4a[1])
+        self.pt1b = self.find_expected_new_pt(distance, angle, self.pt1a[0], self.pt1a[1])
+        self.pt2b = self.find_expected_new_pt(distance, angle, self.pt2a[0], self.pt2a[1])
+        self.pt3b = self.find_expected_new_pt(distance, angle, self.pt3a[0], self.pt3a[1])
+        self.pt4b = self.find_expected_new_pt(distance, angle, self.pt4a[0], self.pt4a[1])
 
         self.line1 = self.canvas.create_line(self.pt1a[0], self.pt1a[1], self.pt1b[0], self.pt1b[1], fill="green", width=3)
         self.line2 = self.canvas.create_line(self.pt2a[0], self.pt2a[1], self.pt2b[0], self.pt2b[1], fill="green", width=3)
         self.line3 = self.canvas.create_line(self.pt3a[0], self.pt3a[1], self.pt3b[0], self.pt3b[1], fill="green", width=3)
         self.line4 = self.canvas.create_line(self.pt4a[0], self.pt4a[1], self.pt4b[0], self.pt4b[1], fill="green", width=3)
 
-    def find_expected_new_pt(self, distance, slope, oldx, oldy):
-        slope_squared = pow(slope, 2)
-        y = sqrt((slope_squared*pow(distance, 2))/(slope_squared+1))+oldy
-        x = ((y-oldy)/slope)+oldx
-        try: return (int(x), int(y))
-        except ValueError: return(int(oldx), int(oldy+distance))
+    def find_expected_new_pt(self, distance, angle_degrees, x, y):
+        # Convert angle from degrees to radians
+        angle_radians = radians(angle_degrees)
+        
+        # Calculate the change in coordinates
+        delta_x = distance * cos(angle_radians)
+        delta_y = distance * sin(angle_radians)
+        
+        # Calculate the new point
+        new_x = x + delta_x
+        new_y = y + delta_y
+        
+        return (int(new_x), int(new_y))
 
-    def update_points(self, x1, y1, width, height, slope, distance):
+    def update_points(self, x1, y1, width, height, angle, distance):
         self.pt1a = (x1, y1)
         self.pt2a = (x1 + width, y1)
         self.pt3a = (x1, y1 + height)
         self.pt4a = (x1 + width, y1 + height)
 
-        self.pt1b = self.find_expected_new_pt(distance, slope, self.pt1a[0], self.pt1a[1])
-        self.pt2b = self.find_expected_new_pt(distance, slope, self.pt2a[0], self.pt2a[1])
-        self.pt3b = self.find_expected_new_pt(distance, slope, self.pt3a[0], self.pt3a[1])
-        self.pt4b = self.find_expected_new_pt(distance, slope, self.pt4a[0], self.pt4a[1])
+        self.pt1b = self.find_expected_new_pt(distance, angle, self.pt1a[0], self.pt1a[1])
+        self.pt2b = self.find_expected_new_pt(distance, angle, self.pt2a[0], self.pt2a[1])
+        self.pt3b = self.find_expected_new_pt(distance, angle, self.pt3a[0], self.pt3a[1])
+        self.pt4b = self.find_expected_new_pt(distance, angle, self.pt4a[0], self.pt4a[1])
 
     def update_lines(self):
-        self.update_points(self.x1, self.y1, self.width, self.height, self.slope, self.distance)
+        self.update_points(self.x1, self.y1, self.width, self.height, self.angle, self.distance)
         self.canvas.coords(self.line1, self.pt1a[0], self.pt1a[1], self.pt1b[0], self.pt1b[1])
         self.canvas.coords(self.line2, self.pt2a[0], self.pt2a[1], self.pt2b[0], self.pt2b[1])
         self.canvas.coords(self.line3, self.pt3a[0], self.pt3a[1], self.pt3b[0], self.pt3b[1])
@@ -100,8 +106,8 @@ class VectorLines:
         self.y1 = pos
         self.update_lines()
 
-    def update_dir(self, slope):
-        self.slope = slope
+    def update_dir(self, angle):
+        self.angle = angle
         self.update_lines()
 
     def update_dist(self, distance):
@@ -133,12 +139,12 @@ class SliderGroup:
         if self.vectorlines == None: 
             thick_slider_pos = 4
         else: 
-            self.vectordir_slider = tk.Scale(master, from_=-5000, to=5000, orient=tk.HORIZONTAL, command=self.update_vectordir)
-            self.vectordir_slider.set(defaulty)
+            self.vectordir_slider = tk.Scale(master, from_=-180, to=180, orient=tk.HORIZONTAL, command=self.update_vectordir)
+            self.vectordir_slider.set(0)
             self.vectordir_slider.grid(row=row, column=4, padx=10, pady=5)
 
             self.vectorlen_slider = tk.Scale(master, from_=0, to=1000, orient=tk.HORIZONTAL, command=self.update_vectorlen)
-            self.vectorlen_slider.set(defaulty)
+            self.vectorlen_slider.set(20)
             self.vectorlen_slider.grid(row=row, column=5, padx=10, pady=5)
 
             thick_slider_pos = 6
