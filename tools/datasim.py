@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from math import *
+import csv
 
 class Rectangle:
     def __init__(self, canvas, x1, y1, x2, y2, width, height, outline="blue", fill="black", thickness=5):
@@ -194,6 +195,9 @@ class RectangleAdjusterApp(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        self.parameters = ["robot_x1", "robot_y1", "robot_x2", "robot_y2", "note_x1", "note_y1", "note_x2", "note_y2", "robot_vector_angle", "robot_vector_length", "likelihood"]
+        self.data = []
+
         self.title("Data Simulation Tool v1.0")
 
         # Create a canvas
@@ -212,6 +216,15 @@ class RectangleAdjusterApp(tk.Tk):
         self.create_rectangle_with_sliders(50, 50, 150, 150, 0, "red", 100, 150, -5, 20)
         self.create_rectangle_with_sliders(200, 200, 300, 300, 1, "purple", 150, 50, 0, 0)
 
+        self.score_box = tk.Text(self, height=1, width=15, foreground="white")
+        self.score_box.pack()
+
+        self.data_appender = tk.Button(self, command=self.append_data, text="Append Data")
+        self.data_appender.pack()
+
+        self.file_saver = tk.Button(self, command=self.save_file, text="Complete CSV")
+        self.file_saver.pack()
+
     def create_rectangle_with_sliders(self, x1, y1, x2, y2, row, outline, width, height, slope, distance):
         rect = Rectangle(self.canvas, x1, y1, x2, y2, outline=outline, width=width, height=height)
         self.rectangles.append(rect)
@@ -222,6 +235,22 @@ class RectangleAdjusterApp(tk.Tk):
             self.vectorlines.append(vect)
         sliders = SliderGroup(self.slider_frame, rect, row, defaultx=x1, defaulty=y1, defaultwidth=width, defaultheight=height, vectorlines=vect)
         self.sliders.append(sliders)
+
+    def append_data(self):
+# "robot_x1", "robot_y1", "robot_x2", "robot_y2", "note_x1", "note_y1", "note_x2", "note_y2", "robot_vector_angle", "robot_vector_length", "likelihood"
+        robot = self.rectangles[0]
+        note = self.rectangles[1]
+        vectorlines = self.vectorlines[0]
+        likelihood_score = self.score_box.get(1.0, "end-1c")
+        self.data.append([robot.x1, robot.y1, robot.x1 + robot.width, robot.y1 + robot.height, note.x1, note.y1, note.x1 + note.width, note.y1 + note.height, vectorlines.angle, vectorlines.distance, likelihood_score])
+        print("Added data with score of " + likelihood_score)
+
+    def save_file(self):
+        with open("dataset.csv", mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(self.parameters)
+            writer.writerows(self.data)
+        print("CSV file generated successfully.")
 
 
 if __name__ == "__main__":
