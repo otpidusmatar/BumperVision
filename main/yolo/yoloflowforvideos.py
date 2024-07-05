@@ -3,7 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 import supervision as sv
 import time
-from math import dist, sqrt, pow
+from math import *
 
 model = YOLO("main/yolo/model/v2noteandbumpermodel.pt")
 # Parameters for Lucas-Kanade optical flow, adjust maxLevel for smoother motion tracking (will affect latency)
@@ -46,23 +46,31 @@ def create_output_mask(masklist):
     masklist = masklist.pop(1)
     return product
 
-def slope(x2, y2, x1, y1):
-    return (y2-y1)/(x2-x1)
+def find_degrees(x2, y2, x1, y1):
+    angle = atan2(y2-y1, x2-x1)
+    return angle
 
 def avg(values):
     try: return sum(values)/len(values)
     except ZeroDivisionError: return None
 
-def find_expected_new_pt(distance, slope, oldx, oldy):
-    slope_squared = pow(slope, 2)
-    y = sqrt((slope_squared*pow(distance, 2))/(slope_squared+1))+oldy
-    x = ((y-oldy)/slope)+oldx
-    try: return (int(x), int(y))
-    except ValueError: return(int(oldx), int(oldy+distance))
+def find_expected_new_pt(distance, angle_degrees, x, y):
+    # Convert angle from degrees to radians
+    angle_radians = radians(angle_degrees)
+    
+    # Calculate the change in coordinates
+    delta_x = distance * cos(angle_radians)
+    delta_y = distance * sin(angle_radians)
+    
+    # Calculate the new point
+    new_x = x + delta_x
+    new_y = y + delta_y
+    
+    return (int(new_x), int(new_y))
 
-def plot_avg_vectors(distance, slope, old_pts, mask, color=(0, 0, 255)):
+def plot_avg_vectors(distance, angle, old_pts, mask, color=(0, 0, 255)):
     for point in old_pts:
-        expected = find_expected_new_pt(distance, slope, point[0], point[1])
+        expected = find_expected_new_pt(distance, angle, point[0], point[1])
         mask = cv.line(mask, expected, (point[0], point[1]), color, 2)
     return mask
 
@@ -85,6 +93,7 @@ while(cap.isOpened()):
     frames_lost = 0
     # ret = a boolean return value from getting the frame, frame = the current frame being projected in the video
     ret, frame = cap.read()
+    # Frame dimensions: (1080, 1920, 3)
     # Converts each frame to grayscale - we previously only converted the first frame to grayscale
     try:
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
@@ -109,7 +118,7 @@ while(cap.isOpened()):
         good_new = next[status == 1].astype(int)
     else: prev_edges_blank = False
     lengths = []
-    slopes = []
+    angles = []
     old_pts = []
     # Draws the optical flow tracks
     for i, (new, old) in enumerate(zip(good_new, good_old)):
@@ -123,11 +132,11 @@ while(cap.isOpened()):
         frame = cv.circle(frame, (a, b), 3, color, -1)
         length = dist([a, b], [c, d])
         lengths.append(length)
-        direction = slope(a, b, c, d)
-        slopes.append(direction)
+        direction = find_degrees(a, b, c, d)
+        angles.append(direction)
         old_pts.append((c, d))
     avg_dist_travelled = avg(lengths)
-    avg_direction_travelled = avg(slopes)
+    avg_direction_travelled = avg(angles)
     mask = plot_avg_vectors(avg_dist_travelled, avg_direction_travelled, old_pts, mask)
     frame_memory.append(mask)
     overlay_mask = create_output_mask(frame_memory)
