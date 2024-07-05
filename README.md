@@ -6,6 +6,7 @@
 - Implemented optical flow algorithm to track detected robot bounding boxes
 - Created script to adjust FPS for testing latency effects with video samples
 - Used slopes and lengths of optical flow vectors to generate average movement vector for detected robots
+- Created tool to generate handmade artificial data for logistic regression
 
 **To-Do:**
 - Train multivariate logistic regression model to output a "likelihood of note collection" metric based on robot info
