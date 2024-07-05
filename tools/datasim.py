@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from math import sqrt
+import numpy as np
 
 class Rectangle:
     def __init__(self, canvas, x1, y1, x2, y2, width, height, outline="blue", fill="black", thickness=5):
@@ -99,6 +100,14 @@ class VectorLines:
         self.y1 = pos
         self.update_lines()
 
+    def update_dir(self, slope):
+        self.slope = slope
+        self.update_lines()
+
+    def update_dist(self, distance):
+        self.distance = distance
+        self.update_lines()
+
 class SliderGroup:
     def __init__(self, master, rectangle, row, defaultx, defaulty, defaultwidth, defaultheight, vectorlines):
         self.rectangle = rectangle
@@ -121,9 +130,22 @@ class SliderGroup:
         self.vshift_slider.set(defaulty)
         self.vshift_slider.grid(row=row, column=3, padx=10, pady=5)
 
+        if self.vectorlines == None: 
+            thick_slider_pos = 4
+        else: 
+            self.vectordir_slider = tk.Scale(master, from_=-5000, to=5000, orient=tk.HORIZONTAL, command=self.update_vectordir)
+            self.vectordir_slider.set(defaulty)
+            self.vectordir_slider.grid(row=row, column=4, padx=10, pady=5)
+
+            self.vectorlen_slider = tk.Scale(master, from_=0, to=1000, orient=tk.HORIZONTAL, command=self.update_vectorlen)
+            self.vectorlen_slider.set(defaulty)
+            self.vectorlen_slider.grid(row=row, column=5, padx=10, pady=5)
+
+            thick_slider_pos = 6
+
         self.thickness_slider = tk.Scale(master, from_=1, to=20, orient=tk.HORIZONTAL, command=self.update_outline_width)
         self.thickness_slider.set(5)
-        self.thickness_slider.grid(row=row, column=4, padx=10, pady=5)
+        self.thickness_slider.grid(row=row, column=thick_slider_pos, padx=10, pady=5)
 
     def update_width(self, val):
         size = int(round(((float(val)*2)/3), 0))
@@ -148,6 +170,14 @@ class SliderGroup:
         self.rectangle.update_vpos(pos)
         if self.vectorlines != None: 
             self.vectorlines.update_vpos(pos)
+
+    def update_vectordir(self, val):
+        slope = int(round(float(val), 0))
+        self.vectorlines.update_dir(slope)
+
+    def update_vectorlen(self, val):
+        distance = int(round(float(val), 0))
+        self.vectorlines.update_dist(distance)
 
     def update_outline_width(self, val):
         width = int(float(val))
